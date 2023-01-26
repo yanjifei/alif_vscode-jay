@@ -1,0 +1,16 @@
+solution:
+  misc:
+    - C:
+      - -std=c99
+      - -Og
+    - Link:
+      - --specs=nosys.specs
+      - --entry=Reset_Handler
+      - -Wl,-Map=.map,--cref,-print-memory-usage
+  projects:
+    - project: .cproject.yaml
+  target-types:
+    - device: Alif Semiconductor::AE722F80F55D5AE:M55_HE
+      type: mcu
+      compiler: GCC
+      debug: "on"

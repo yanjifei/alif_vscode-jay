@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "./out/.cproject/mcu/.cproject+mcu.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "jlink",
+            "showDevDebugOutput": "both",
+            "device": "AE722F80F55D5_HE",
+            "interface": "jtag",
+            "preLaunchCommands": [
+                "monitor speed 15000"
+            ]
+        }
+    ]
+}

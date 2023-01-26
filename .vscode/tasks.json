@@ -1,0 +1,54 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Generate and Build with csolution + cbuild",
+            "type": "shell",
+            "command": "cbuild .cproject+mcu.cprj",
+            "problemMatcher": [
+                "$gcc",
+                "$armcc5",
+                "$iar"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": "Generate Project Content with csolution"
+        },
+        {
+            "label": "Build Project with cbuild",
+            "type": "shell",
+            "command": "cbuild .cproject+mcu.cprj",
+            "problemMatcher": [
+                "$gcc",
+                "$armcc5",
+                "$iar"
+            ]
+        },
+        {
+            "label": "Clean Project with cbuild",
+            "type": "shell",
+            "command": "cbuild .cproject+mcu.cprj -c",
+            "problemMatcher": [],
+        },
+        {
+            "label": "Generate Project Content with csolution",
+            "type": "shell",
+            "command": "csolution convert -s .csolution.yaml",
+            "problemMatcher": []
+        },
+        {
+            "label": "First time pack installation",
+            "type": "shell",
+            "command": [
+                "cpackget init https://keil.com/pack/index.pidx;",
+                "cpackget add ARM.CMSIS.5.9.0;",
+                "cpackget add https://github.com/alifsemi/alif_ensemble-cmsis-dfp/releases/download/v0.5.2/AlifSemiconductor.Ensemble.0.5.2.pack;",
+                "cpackget list;",
+                "echo 'Pack installation has been completed'"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
