@@ -4,7 +4,7 @@
         {
             "label": "Generate and Build with csolution + cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+mcu.cprj",
+            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj",
             "problemMatcher": [
                 "$gcc",
                 "$armcc5",
@@ -19,7 +19,7 @@
         {
             "label": "Build Project with cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+mcu.cprj",
+            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj",
             "problemMatcher": [
                 "$gcc",
                 "$armcc5",
@@ -29,7 +29,7 @@
         {
             "label": "Clean Project with cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+mcu.cprj -c",
+            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj -c",
             "problemMatcher": [],
         },
         {
@@ -49,6 +49,51 @@
                 "echo 'Pack installation has been completed'"
             ],
             "problemMatcher": []
-        }
+        },
+        {
+            "label": "Program with Security Toolkit",
+            "type": "shell",
+            "command": [
+                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "pushd $env:SETOOLS_ROOT;",
+                "./app-gen-toc.exe -f alif-img.json;",
+                "./app-write-mram.exe -p;",
+                "Remove-Item ./build/images/alif-img.bin;",
+                "Remove-Item ./alif-img.json;",
+                "popd"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Program with Security Toolkit (select COM port)",
+            "type": "shell",
+            "command": [
+                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "pushd $env:SETOOLS_ROOT;",
+                "./app-gen-toc.exe -f alif-img.json;",
+                "./app-write-mram.exe -p -d;",
+                "Remove-Item ./build/images/alif-img.bin;",
+                "Remove-Item ./alif-img.json;",
+                "popd"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Program with Security Toolkit (TOC only)",
+            "type": "shell",
+            "command": [
+                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "pushd $env:SETOOLS_ROOT;",
+                "./app-gen-toc.exe -f alif-img.json;",
+                "./app-write-mram.exe -S;",
+                "Remove-Item ./build/images/alif-img.bin;",
+                "Remove-Item ./alif-img.json;",
+                "popd"
+            ],
+            "problemMatcher": []
+        },
     ]
 }
