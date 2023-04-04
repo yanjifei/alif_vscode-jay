@@ -36,9 +36,9 @@ project:
     
     # - component: AlifSemiconductor::Device:OSPI XIP:core@1.0.0
     # - component: AlifSemiconductor::Device:OSPI XIP:utility@1.0.0
-    - component: AlifSemiconductor::Device:SE Services:MHU Driver@0.63.0
+    # - component: AlifSemiconductor::Device:SE Services:MHU Driver@0.63.0
     # - component: AlifSemiconductor::Device:SE Services:SE RunTime services&Lib@0.63.0
-    - component: AlifSemiconductor::Device:SE Services:SE RunTime services&Source@0.63.0
+    # - component: AlifSemiconductor::Device:SE Services:SE RunTime services&Source@0.63.0
 
     # - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor MT9M114@1.0.0
     # - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0@1.0.0
