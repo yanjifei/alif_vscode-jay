@@ -4,13 +4,13 @@
         {
             "name": "Cortex Debug",
             "cwd": "${workspaceFolder}",
-            "executable": "./out/.cproject/mcu/.cproject+mcu.elf",
+            "executable": "./out/.cproject/${command:cpptools.activeConfigName}/.cproject+${command:cpptools.activeConfigName}.elf",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",
             "servertype": "jlink",
             "showDevDebugOutput": "both",
-            "device": "AE722F80F55D5_HE",
+            "device": "AE722F80F55D5_${command:cpptools.activeConfigName}",
             "interface": "jtag",
             "preLaunchCommands": [
                 "monitor speed 15000"
