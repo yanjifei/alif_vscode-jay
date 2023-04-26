@@ -35,7 +35,7 @@
         {
             "label": "Generate Project Content with csolution",
             "type": "shell",
-            "command": "csolution convert -s .csolution.yaml",
+            "command": "csolution convert -s .csolution.yaml -c .cproject+${command:cpptools.activeConfigName}",
             "problemMatcher": []
         },
         {
@@ -43,7 +43,7 @@
             "type": "shell",
             "command": [
                 "cpackget init https://keil.com/pack/index.pidx;",
-                "cpackget add ARM.CMSIS.5.9.0;",
+                "cpackget add https://github.com/ARM-software/CMSIS_5/releases/download/5.9.0/ARM.CMSIS.5.9.0.pack;",
                 "cpackget add https://github.com/alifsemi/alif_ensemble-cmsis-dfp/releases/download/v0.5.2/AlifSemiconductor.Ensemble.0.5.2.pack;",
                 "cpackget list;",
                 "echo 'Pack installation has been completed'"
@@ -54,7 +54,7 @@
             "label": "Program with Security Toolkit",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
                 "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
                 "pushd $env:SETOOLS_ROOT;",
                 "./app-gen-toc.exe -f alif-img.json;",
@@ -69,7 +69,7 @@
             "label": "Program with Security Toolkit (select COM port)",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
                 "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
                 "pushd $env:SETOOLS_ROOT;",
                 "./app-gen-toc.exe -f alif-img.json;",
@@ -81,10 +81,10 @@
             "problemMatcher": []
         },
         {
-            "label": "Program with Security Toolkit (TOC only)",
+            "label": "Update TOC with Security Toolkit",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\mcu\\.cproject+mcu.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
+                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
                 "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
                 "pushd $env:SETOOLS_ROOT;",
                 "./app-gen-toc.exe -f alif-img.json;",
@@ -95,5 +95,16 @@
             ],
             "problemMatcher": []
         },
+        {
+            "label": "Install debug stubs with Security Toolkit",
+            "type": "shell",
+            "command": [
+                "pushd $env:SETOOLS_ROOT;",
+                "./app-gen-toc.exe -f .\\build\\config\\app-cpu-stubs.json;",
+                "./app-write-mram.exe;",
+                "popd"
+            ],
+            "problemMatcher": []
+        }
     ]
 }
