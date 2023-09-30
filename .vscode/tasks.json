@@ -4,7 +4,7 @@
         {
             "label": "Generate and Build with csolution + cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj",
+            "command": "cbuild cproject+${command:cpptools.activeConfigName}.cprj",
             "problemMatcher": [
                 "$gcc",
                 "$armcc5",
@@ -19,7 +19,7 @@
         {
             "label": "Build Project with cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj",
+            "command": "cbuild cproject+${command:cpptools.activeConfigName}.cprj",
             "problemMatcher": [
                 "$gcc",
                 "$armcc5",
@@ -29,13 +29,38 @@
         {
             "label": "Clean Project with cbuild",
             "type": "shell",
-            "command": "cbuild .cproject+${command:cpptools.activeConfigName}.cprj -c",
-            "problemMatcher": [],
+            "command": "cbuild cproject+${command:cpptools.activeConfigName}.cprj -c",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean all",
+            "type": "shell",
+            "windows": {
+                "command": [
+                "cbuild cproject+${command:cpptools.activeConfigName}.cprj -c;",
+                "rm -Recurse -Force ./out;",
+                "rm -Recurse -Force ./RTE;",
+                "rm -Recurse -Force ./tmp;",
+                "rm -Recurse -Force *.yml;",
+                "rm -Recurse -Force *.cprj;",         
+                ],
+            },
+            "linux": {
+                "command": [
+                "cbuild cproject+${command:cpptools.activeConfigName}.cprj -c;",
+                "rm -rf ./out;",
+                "rm -rf ./RTE;",
+                "rm -rf ./tmp;",
+                "rm -rf *.yml;",
+                "rm -rf *.cprj;",         
+                ],
+            },
+            "problemMatcher": []
         },
         {
             "label": "Generate Project Content with csolution",
             "type": "shell",
-            "command": "csolution convert -s .csolution.yaml -c .cproject+${command:cpptools.activeConfigName}",
+            "command": "csolution convert -s csolution.yaml -c cproject+${command:cpptools.activeConfigName}",
             "problemMatcher": []
         },
         {
@@ -44,7 +69,7 @@
             "command": [
                 "cpackget init https://keil.com/pack/index.pidx;",
                 "cpackget add https://github.com/ARM-software/CMSIS_5/releases/download/5.9.0/ARM.CMSIS.5.9.0.pack;",
-                "cpackget add https://github.com/alifsemi/alif_ensemble-cmsis-dfp/releases/download/v0.5.2/AlifSemiconductor.Ensemble.0.5.2.pack;",
+                "cpackget add https://github.com/alifsemi/alif_ensemble-cmsis-dfp/releases/download/v0.9.6/AlifSemiconductor.Ensemble.0.9.6.pack;",
                 "cpackget list;",
                 "echo 'Pack installation has been completed'"
             ],
@@ -54,13 +79,13 @@
             "label": "Program with Security Toolkit",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
-                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $env:SETOOLS_ROOT/build/images/alif-img.bin;",
+                "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $env:SETOOLS_ROOT/alif-img.json;",
                 "pushd $env:SETOOLS_ROOT;",
-                "./app-gen-toc.exe -f alif-img.json;",
-                "./app-write-mram.exe -p;",
-                "Remove-Item ./build/images/alif-img.bin;",
-                "Remove-Item ./alif-img.json;",
+                "./app-gen-toc -f alif-img.json;",
+                "./app-write-mram -p;",
+                "rm ./build/images/alif-img.bin;",
+                "rm ./alif-img.json;",
                 "popd"
             ],
             "problemMatcher": []
@@ -69,13 +94,13 @@
             "label": "Program with Security Toolkit (select COM port)",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
-                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $env:SETOOLS_ROOT/build/images/alif-img.bin;",
+                "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $env:SETOOLS_ROOT/alif-img.json;",
                 "pushd $env:SETOOLS_ROOT;",
-                "./app-gen-toc.exe -f alif-img.json;",
-                "./app-write-mram.exe -p -d;",
-                "Remove-Item ./build/images/alif-img.bin;",
-                "Remove-Item ./alif-img.json;",
+                "./app-gen-toc -f alif-img.json;",
+                "./app-write-mram -p -d;",
+                "rm ./build/images/alif-img.bin;",
+                "rm ./alif-img.json;",
                 "popd"
             ],
             "problemMatcher": []
@@ -84,13 +109,13 @@
             "label": "Update TOC with Security Toolkit",
             "type": "shell",
             "command": [
-                "Copy-Item \".\\out\\.cproject\\${command:cpptools.activeConfigName}\\.cproject+${command:cpptools.activeConfigName}.bin\" -Destination \"$env:SETOOLS_ROOT\\build\\images\\alif-img.bin\";",
-                "Copy-Item \".\\.alif\\m55-${command:cpptools.activeConfigName}_cfg.json\" -Destination \"$env:SETOOLS_ROOT\\alif-img.json\";",
+                "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $env:SETOOLS_ROOT/build/images/alif-img.bin;",
+                "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $env:SETOOLS_ROOT/alif-img.json;",
                 "pushd $env:SETOOLS_ROOT;",
-                "./app-gen-toc.exe -f alif-img.json;",
-                "./app-write-mram.exe -S;",
-                "Remove-Item ./build/images/alif-img.bin;",
-                "Remove-Item ./alif-img.json;",
+                "./app-gen-toc -f alif-img.json;",
+                "./app-write-mram -S;",
+                "rm ./build/images/alif-img.bin;",
+                "rm ./alif-img.json;",
                 "popd"
             ],
             "problemMatcher": []
@@ -100,8 +125,19 @@
             "type": "shell",
             "command": [
                 "pushd $env:SETOOLS_ROOT;",
-                "./app-gen-toc.exe -f .\\build\\config\\app-cpu-stubs.json;",
-                "./app-write-mram.exe;",
+                "./app-gen-toc -f ./build/config/app-cpu-stubs.json;",
+                "./app-write-mram;",
+                "popd"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Install debug stubs with Security Toolkit (select COM port)",
+            "type": "shell",
+            "command": [
+                "pushd $env:SETOOLS_ROOT;",
+                "./app-gen-toc -f ./build/config/app-cpu-stubs.json;",
+                "./app-write-mram -d;",
                 "popd"
             ],
             "problemMatcher": []

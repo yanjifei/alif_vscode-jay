@@ -3,5 +3,7 @@
         "*.h": "c",
     },
 
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+
+    "cortex-debug.variableUseNaturalFormat": false,
 }
