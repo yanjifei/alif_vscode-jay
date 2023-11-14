@@ -2,7 +2,7 @@
 A simple Blinky project to setup and test VSCode and GNU tools based development environment.
 
 The default main branch is set to support Gen 2 Ensemble devices. "gen1" branch must be used
-for older Generation 1 devices.
+for older Gen 1 devices.
 
 To build the template for a supported board other than the DevKit, you may have to download
 the Board Library submodule. From your local clone, do the following:
