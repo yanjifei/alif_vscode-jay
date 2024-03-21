@@ -55,6 +55,16 @@
                 "rm -rf *.cprj;",         
                 ],
             },
+            "osx": {
+              "command": [
+              "cbuild cproject+${command:cpptools.activeConfigName}.cprj -c;",
+              "rm -rf ./out;",
+              "rm -rf ./RTE;",
+              "rm -rf ./tmp;",
+              "rm -rf *.yml;",
+              "rm -rf *.cprj;",         
+              ],
+          },
             "problemMatcher": []
         },
         {
@@ -102,6 +112,19 @@
                     "popd"
                 ]
             },
+            "osx": {
+              "command": [
+                  "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $SETOOLS_ROOT/build/images/alif-img.bin;",
+                  "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $SETOOLS_ROOT/alif-img.json;",
+                  "pushd $SETOOLS_ROOT;",
+                  "./app-gen-toc -f alif-img.json;",
+                  "./app-write-mram -p;",
+                  "rm ./build/images/alif-img.bin;",
+                  "rm ./alif-img.json;",
+                  "popd"
+              ]
+          },
+
             "problemMatcher": []
         },
         {
@@ -131,6 +154,18 @@
                     "popd"
                 ]
             },
+            "osx": {
+              "command": [
+                  "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $SETOOLS_ROOT/build/images/alif-img.bin;",
+                  "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $SETOOLS_ROOT/alif-img.json;",
+                  "pushd $SETOOLS_ROOT;",
+                  "./app-gen-toc -f alif-img.json;",
+                  "./app-write-mram -p -d;",
+                  "rm ./build/images/alif-img.bin;",
+                  "rm ./alif-img.json;",
+                  "popd"
+              ]
+          },
             "problemMatcher": []
         },
         {
@@ -160,6 +195,18 @@
                     "popd"
                 ]
             },
+            "osx": {
+              "command": [
+                  "cp ./out/cproject/${command:cpptools.activeConfigName}/cproject.bin $SETOOLS_ROOT/build/images/alif-img.bin;",
+                  "cp ./.alif/m55-${command:cpptools.activeConfigName}_cfg.json $SETOOLS_ROOT/alif-img.json;",
+                  "pushd $SETOOLS_ROOT;",
+                  "./app-gen-toc -f alif-img.json;",
+                  "./app-write-mram -S;",
+                  "rm ./build/images/alif-img.bin;",
+                  "rm ./alif-img.json;",
+                  "popd"
+              ]
+          },
             "problemMatcher": []
         },
         {
@@ -181,6 +228,14 @@
                     "popd"
                 ]
             },
+            "osx": {
+              "command": [
+                  "pushd $SETOOLS_ROOT;",
+                  "./app-gen-toc -f ./build/config/app-cpu-stubs.json;",
+                  "./app-write-mram;",
+                  "popd"
+              ]
+          },
             "problemMatcher": []
         },
         {
@@ -202,6 +257,14 @@
                     "popd"
                 ]
             },
+            "osx": {
+              "command": [
+                  "pushd $SETOOLS_ROOT;",
+                  "./app-gen-toc -f ./build/config/app-cpu-stubs.json;",
+                  "./app-write-mram -d;",
+                  "popd"
+              ]
+          },
             "problemMatcher": []
         }
     ]
