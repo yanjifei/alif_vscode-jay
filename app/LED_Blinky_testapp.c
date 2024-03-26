@@ -9,38 +9,82 @@
  */
 
 /**************************************************************************//**
- * @file     LED_blink_baremetal.c
- * @author   Girish BN, Manoj A Murudi
- * @email    girish.bn@alifsemi.com, manoj.murudi@alifsemi.com
+ * @file     LED_Blinky_testapp.c
+ * @author   Manoj A Murudi
+ * @email    manoj.murudi@alifsemi.com
  * @version  V1.0.0
  * @date     25-May-2023
- * @brief    DEMO application for LED blink.
+ * @brief    FreeRTOS DEMO application for LED blink.
+ *           - Toggle LED0_R and LED1_B alternately
  * @bug      None.
  * @Note     None.
  ******************************************************************************/
 
-#include "Driver_GPIO.h"
-#include "pinconf.h"
+/* Includes */
 #include <stdio.h>
+#include <stdlib.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
+
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
+#include "Driver_GPIO.h"
+#include "pinconf.h"
 #if defined(RTE_Compiler_IO_STDOUT)
 #include "retarget_stdout.h"
 #endif  /* RTE_Compiler_IO_STDOUT */
 
 
-/* Uncomment to use the pin configuration provided by the conductor tool */
-//#define USE_CONDUCTOR_PIN_CONFIG
+/*Define for FreeRTOS*/
+#define STACK_SIZE     1024
+#define TIMER_SERVICE_TASK_STACK_SIZE configTIMER_TASK_STACK_DEPTH // 512
+#define IDLE_TASK_STACK_SIZE          configMINIMAL_STACK_SIZE // 1024
 
-#ifdef USE_CONDUCTOR_PIN_CONFIG
-#include "conductor_board_config.h"
-#endif
+StackType_t IdleStack[2 * IDLE_TASK_STACK_SIZE];
+StaticTask_t IdleTcb;
+StackType_t TimerStack[2 * TIMER_SERVICE_TASK_STACK_SIZE];
+StaticTask_t TimerTcb;
 
+/****************************** FreeRTOS functions **********************/
+
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+      StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize) {
+   *ppxIdleTaskTCBBuffer = &IdleTcb;
+   *ppxIdleTaskStackBuffer = IdleStack;
+   *pulIdleTaskStackSize = IDLE_TASK_STACK_SIZE;
+}
+
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
+{
+   (void) pxTask;
+
+   for (;;);
+}
+
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+      StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize)
+{
+   *ppxTimerTaskTCBBuffer = &TimerTcb;
+   *ppxTimerTaskStackBuffer = TimerStack;
+   *pulTimerTaskStackSize = TIMER_SERVICE_TASK_STACK_SIZE;
+}
+
+void vApplicationIdleHook(void)
+{
+   for (;;);
+}
+
+/*****************Only for FreeRTOS use *************************/
+
+/* Define the FreeRTOS object control blocks...  */
+#define DEMO_STACK_SIZE                 1024
+
+TaskHandle_t led_xHandle;
 
 /* LED0 gpio pins */
 #define GPIO12_PORT                     12  /*< Use LED0_R,LED0_B GPIO port >*/
 #define GPIO7_PORT                      7   /*< Use LED0_G GPIO port >*/
-#define GPIO0_PORT                      0   /*< Use BUTTON_PURPLE GPIO port >*/
 #define PIN3                            3   /*< LED0_R gpio pin >*/
 #define PIN4                            4   /*< LED0_G gpio pin >*/
 #define PIN0                            0   /*< LED0_B gpio pin >*/
@@ -63,30 +107,13 @@ ARM_DRIVER_GPIO *gpioDrv7 = &ARM_Driver_GPIO_(GPIO7_PORT);
 extern  ARM_DRIVER_GPIO ARM_Driver_GPIO_(GPIO6_PORT);
 ARM_DRIVER_GPIO *gpioDrv6 = &ARM_Driver_GPIO_(GPIO6_PORT);
 
-extern ARM_DRIVER_GPIO ARM_Driver_GPIO_(GPIO0_PORT);
-ARM_DRIVER_GPIO *gpioDrv0 = &ARM_Driver_GPIO_(GPIO0_PORT);
-
-uint32_t volatile ms_ticks = 0;
-
-void SysTick_Handler (void) {
-  ms_ticks++;
-}
-void delay(uint32_t nticks)
-{
-      uint32_t c_ticks;
-
-      c_ticks = ms_ticks;
-      while ((ms_ticks - c_ticks) < nticks) ;
-}
-
-
 /**
-  \fn         void led_blink_app(void)
-  \brief      LED blinky function
-  \param[in]  none
+  \fn         void led_demo_Thread(void *pvParameters)
+  \brief      LED blinky demo Thread
+  \param[in]  pvParameters : thread input
   \return     none
 */
-void led_blink_app (void)
+void led_demo_Thread(void *pvParameters)
 {
   /*
    * gpio12 pin3 can be used as Red LED of LED0.
@@ -109,30 +136,17 @@ void led_blink_app (void)
     uint8_t LED1_R = PIN2;
     uint8_t LED1_G = PIN4;
     uint8_t LED1_B = PIN6;
-    uint8_t BUTTON_PURPLE = PIN0;
-    uint32_t button_value = 1;
-    uint32_t button_pad_config = PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP;
-    
+    const TickType_t xDelay = (1000/portTICK_PERIOD_MS);
 
-    printf("led blink demo application started\n\n");
+    printf("led blink demo application for FreeRTOS started\n\n");
 
-#ifdef USE_CONDUCTOR_PIN_CONFIG
-    ret1 = conductor_pins_config();
-
-    if (ret1 != 0) {
-        printf("ERROR: Conductor pin configuration failed\n");
-        return;
-    }
-#else
     /* pinmux configurations for all GPIOs */
     pinconf_set(GPIO12_PORT, LED0_R, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(GPIO7_PORT, LED0_G, PINMUX_ALTERNATE_FUNCTION_0, 0);
-    pinconf_set(GPIO0_PORT, BUTTON_PURPLE, PINMUX_ALTERNATE_FUNCTION_0, button_pad_config);
     pinconf_set(GPIO12_PORT, LED0_B, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(GPIO6_PORT, LED1_R, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(GPIO6_PORT, LED1_G, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(GPIO6_PORT, LED1_B, PINMUX_ALTERNATE_FUNCTION_0, 0);
-#endif
 
     ret1 = gpioDrv12->Initialize(LED0_R, NULL);
     ret2 = gpioDrv6->Initialize(LED1_R, NULL);
@@ -153,13 +167,6 @@ void led_blink_app (void)
         return;
     }
 
-    ret1 = gpioDrv0->Initialize(BUTTON_PURPLE, NULL);
-    if ((ret1 != ARM_DRIVER_OK)) {
-        printf("ERROR: Failed to initialize\n");
-        return;
-    }
-
-
     ret1 = gpioDrv12->PowerControl(LED0_R, ARM_POWER_FULL);
     ret2 = gpioDrv6->PowerControl(LED1_R, ARM_POWER_FULL);
     if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
@@ -178,13 +185,6 @@ void led_blink_app (void)
         printf("ERROR: Failed to powered full\n");
         goto error_uninitialize;
     }
-
-    ret1 = gpioDrv0->PowerControl(BUTTON_PURPLE, ARM_POWER_FULL);
-    if ((ret1 != ARM_DRIVER_OK)) {
-        printf("ERROR: Failed to powered full\n");
-        goto error_uninitialize;
-    }
-
 
     ret1 = gpioDrv12->SetDirection(LED0_R, GPIO_PIN_DIRECTION_OUTPUT);
     ret2 = gpioDrv6->SetDirection(LED1_R, GPIO_PIN_DIRECTION_OUTPUT);
@@ -205,94 +205,73 @@ void led_blink_app (void)
         goto error_power_off;
     }
 
-    ret1 = gpioDrv0->SetDirection(BUTTON_PURPLE, GPIO_PIN_DIRECTION_INPUT);
-    if ((ret1 != ARM_DRIVER_OK)) {
-        printf("ERROR: Failed to configure\n");
-        goto error_power_off;
-    }
-    
-
-
     while (1)
     {
         /* Toggle Red LED */
         ret1 = gpioDrv12->SetValue(LED0_R, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
+        ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_HIGH);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
+        }
 
-        /* wait for 1 Sec */
-        delay(1000);
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
 
         ret1 = gpioDrv12->SetValue(LED0_R, GPIO_PIN_OUTPUT_STATE_LOW);
-        // ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_LOW);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
-
-        /* wait for 1 Sec */
-        delay(1000);
-
-        ret1 = gpioDrv0->GetValue(BUTTON_PURPLE,&button_value);
-        if(button_value == 1)
-        {
-            printf("Button is pressed\n");
-            ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_HIGH);
+        ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_LOW);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
         }
-        else
-        {
-            printf("Button is not pressed\n");
-            ret2 = gpioDrv6->SetValue(LED1_R, GPIO_PIN_OUTPUT_STATE_LOW);
+
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
+
+
+        /* Toggle Green LED */
+        ret1 = gpioDrv7->SetValue(LED0_G, GPIO_PIN_OUTPUT_STATE_HIGH);
+        ret2 = gpioDrv6->SetValue(LED1_G, GPIO_PIN_OUTPUT_STATE_HIGH);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
         }
-        
+
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
+
+        ret1 = gpioDrv7->SetValue(LED0_G, GPIO_PIN_OUTPUT_STATE_LOW);
+        ret2 = gpioDrv6->SetValue(LED1_G, GPIO_PIN_OUTPUT_STATE_LOW);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
+        }
+
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
 
 
-        // /* Toggle Green LED */
-        // ret1 = gpioDrv7->SetValue(LED0_G, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // ret2 = gpioDrv6->SetValue(LED1_G, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
+        /* Toggle Blue LED */
+        ret1 = gpioDrv12->SetValue(LED0_B, GPIO_PIN_OUTPUT_STATE_HIGH);
+        ret2 = gpioDrv6->SetValue(LED1_B, GPIO_PIN_OUTPUT_STATE_HIGH);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
+        }
 
-        // /* wait for 1 Sec */
-        // delay(1000);
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
 
-        // ret1 = gpioDrv7->SetValue(LED0_G, GPIO_PIN_OUTPUT_STATE_LOW);
-        // ret2 = gpioDrv6->SetValue(LED1_G, GPIO_PIN_OUTPUT_STATE_LOW);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
+        ret1 = gpioDrv12->SetValue(LED0_B, GPIO_PIN_OUTPUT_STATE_LOW);
+        ret2 = gpioDrv6->SetValue(LED1_B, GPIO_PIN_OUTPUT_STATE_LOW);
+        if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
+            printf("ERROR: Failed to toggle LEDs\n");
+            goto error_power_off;
+        }
 
-        // /* wait for 1 Sec */
-        // delay(1000);
-
-
-        // /* Toggle Blue LED */
-        // ret1 = gpioDrv12->SetValue(LED0_B, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // ret2 = gpioDrv6->SetValue(LED1_B, GPIO_PIN_OUTPUT_STATE_HIGH);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
-
-        // /* wait for 1 Sec */
-        // delay(1000);
-
-        // ret1 = gpioDrv12->SetValue(LED0_B, GPIO_PIN_OUTPUT_STATE_LOW);
-        // ret2 = gpioDrv6->SetValue(LED1_B, GPIO_PIN_OUTPUT_STATE_LOW);
-        // if ((ret1 != ARM_DRIVER_OK) || (ret2 != ARM_DRIVER_OK)) {
-        //     printf("ERROR: Failed to toggle LEDs\n");
-        //     goto error_power_off;
-        // }
-
-        // /* wait for 1 Sec */
-        // delay(1000);
-    }
+        /* delay for 1 Sec */
+        vTaskDelay(xDelay);
+    };
 
 error_power_off:
 
@@ -343,8 +322,10 @@ error_uninitialize:
     }
 }
 
-/* Define main entry point.  */
-int main (void)
+/*----------------------------------------------------------------------------
+ *      Main: Initialize and start the FreeRTOS Kernel
+ *---------------------------------------------------------------------------*/
+int main( void )
 {
     #if defined(RTE_Compiler_IO_STDOUT_User)
     int32_t ret;
@@ -356,10 +337,19 @@ int main (void)
         }
     }
     #endif
-    /* Configure Systick for each millisec */
-    SysTick_Config(SystemCoreClock/1000);
+   /* System Initialization */
+   SystemCoreClockUpdate();
+   /* Create application main thread */
+   BaseType_t xReturned = xTaskCreate(led_demo_Thread, "led_demo_Thread", 216, NULL,configMAX_PRIORITIES-1, &led_xHandle);
+   if (xReturned != pdPASS)
+   {
+      vTaskDelete(led_xHandle);
+      return -1;
+   }
 
-    led_blink_app();
-    return 0;
+   /* Start thread execution */
+   vTaskStartScheduler();
+
 }
+/************************ (C) COPYRIGHT ALIF SEMICONDUCTOR *****END OF FILE****/
 

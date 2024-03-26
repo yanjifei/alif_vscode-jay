@@ -2,11 +2,12 @@ project:
   groups:
     - group: App
       files:
+        - file: app/button_monitor.c
+        # - file: app/pump_comm.c
         # - file: app/main.c
-        - file: app/LED_blink_baremetal.c
+        # - file: app/LED_blink_baremetal.c
         # - file: app/UART4_Baremetal.c
-        # - file: app/i2c_baremetal.c
-        # - file: app/ADC_Baremetal.c
+        # - file: app/LED_Blinky_testapp.c
         - file: app/gcc_M55_HE.ld
           for-context: +HE
         - file: app/gcc_M55_HP.ld
