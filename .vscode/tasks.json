@@ -80,6 +80,7 @@
                 "cpackget init https://www.keil.com/pack/index.pidx;",
                 "cpackget add https://github.com/ARM-software/CMSIS_5/releases/download/5.9.0/ARM.CMSIS.5.9.0.pack;",
                 "cpackget add https://github.com/alifsemi/alif_ensemble-cmsis-dfp/releases/download/v1.0.0/AlifSemiconductor.Ensemble.1.0.0.pack;",
+                "cpackget add https://github.com/ARM-software/CMSIS-Compiler/releases/download/v1.0.0/ARM.CMSIS-Compiler.1.0.0.pack;",
                 "cpackget list;",
                 "echo 'Pack installation has been completed'"
             ],

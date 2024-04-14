@@ -29,6 +29,7 @@ solution:
   packs:
     - pack: AlifSemiconductor::Ensemble@1.0.0
     - pack: ARM::CMSIS
+    - pack: ARM::CMSIS-Compiler@1.0.0
   projects:
     - project: cproject.yaml
   

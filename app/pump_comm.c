@@ -51,7 +51,7 @@
 
 /* UART Driver instance (UART0-UART7) */
 #define UART      4
-#define PUMP_TL 0
+#define PUMP_TL 5
 
 /* UART Driver */
 extern ARM_DRIVER_USART ARM_Driver_USART_(UART);
@@ -62,6 +62,7 @@ static ARM_DRIVER_USART *USARTdrv = &ARM_Driver_USART_(UART);
 static ARM_DRIVER_USART *USARTdrv_pump_tl = &ARM_Driver_USART_(PUMP_TL);
 
 void myUART_Thread_entry();
+void Pump_TL_Thread_entry();
 
 #define UART_CB_TX_EVENT          1U << 0
 #define UART_CB_RX_EVENT          1U << 1
@@ -85,11 +86,17 @@ int hardware_init(void)
     /* UART4_TX_B */
     pinconf_set( PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);
 
-    /* UART0_RX_A */
-    pinconf_set( PORT_0, PIN_0, PINMUX_ALTERNATE_FUNCTION_2, PADCTRL_READ_ENABLE);
+    /* UART5_RX_C */
+    pinconf_set( PORT_5, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, PADCTRL_READ_ENABLE);
 
-    /* UART0_TX_A */
-    pinconf_set( PORT_0, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, 0);
+    /* UART5_TX_C */
+    pinconf_set( PORT_5, PIN_3, PINMUX_ALTERNATE_FUNCTION_2, 0);
+
+    // /* UART0_TX_B */
+    // pinconf_set( PORT_1, PIN_5, PINMUX_ALTERNATE_FUNCTION_2, PADCTRL_READ_ENABLE);
+
+    // /* UART0_RX_B */
+    // pinconf_set( PORT_1, PIN_4, PINMUX_ALTERNATE_FUNCTION_2, 0);
 
     return 0;
 }
@@ -251,16 +258,16 @@ void myUART_Thread_entry()
 
     printf("\r\n Press Enter or any character on serial terminal to receive a message:\r\n");
 
-    event_flags_uart &= ~UART_CB_TX_EVENT;
-    ret = USARTdrv->Send("\r\nPress Enter or any character to receive a message\r\n", 53);
-    if(ret != ARM_DRIVER_OK)
-    {
-        printf("\r\n Error in UART Send.\r\n");
-        goto error_poweroff;
-    }
+    // event_flags_uart &= ~UART_CB_TX_EVENT;
+    // ret = USARTdrv->Send("\r\nPress Enter or any character to receive a message\r\n", 53);
+    // if(ret != ARM_DRIVER_OK)
+    // {
+    //     printf("\r\n Error in UART Send.\r\n");
+    //     goto error_poweroff;
+    // }
 
-    /* wait for event flag after UART call */
-    while(!(event_flags_uart & (UART_CB_TX_EVENT)));
+    // /* wait for event flag after UART call */
+    // while(!(event_flags_uart & (UART_CB_TX_EVENT)));
 
     while(1)
     {
@@ -325,6 +332,98 @@ error_uninitialize:
     printf("\r\n XXX UART demo thread exiting XXX...\r\n");
 }
 
+void Pump_TL_Thread_entry()
+{
+    char cmd;
+    int32_t ret;
+    ARM_DRIVER_VERSION version;
+    event_flags_uart_pump_tl = 0;
+
+    version = USARTdrv_pump_tl->GetVersion();
+    // printf("\r\n UART version api:%X driver:%X...\r\n",version.api, version.drv);
+
+    /* Initialize UART hardware pins using PinMux Driver. */
+    ret = hardware_init();
+    if(ret != 0)
+    {
+        printf("\r\n Error in UART hardware_init.\r\n");
+        return;
+    }
+
+    /* Initialize UART driver */
+    ret = USARTdrv->Initialize(myUART_callback);
+    ret = USARTdrv_pump_tl->Initialize(myUART_callback_pump_tl);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Initialize.\r\n");
+        return;
+    }
+
+    /* Power up UART peripheral */
+    ret = USARTdrv->PowerControl(ARM_POWER_FULL);
+    ret = USARTdrv_pump_tl->PowerControl(ARM_POWER_FULL);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Power Up.\r\n");
+    }
+
+    /* Configure UART to 115200 Bits/sec */
+    ret =  USARTdrv->Control(ARM_USART_MODE_ASYNCHRONOUS |
+                             ARM_USART_DATA_BITS_8       |
+                             ARM_USART_PARITY_NONE       |
+                             ARM_USART_STOP_BITS_1       |
+                             ARM_USART_FLOW_CONTROL_NONE, 115200);
+    ret = USARTdrv_pump_tl->Control(ARM_USART_MODE_ASYNCHRONOUS |
+                             ARM_USART_DATA_BITS_8       |
+                             ARM_USART_PARITY_NONE       |
+                             ARM_USART_STOP_BITS_1       |
+                             ARM_USART_FLOW_CONTROL_NONE, 115200);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Control.\r\n");
+    }
+
+    /* Enable Receiver and Transmitter lines */
+    ret =  USARTdrv->Control(ARM_USART_CONTROL_TX, 1);
+    ret = USARTdrv_pump_tl->Control(ARM_USART_CONTROL_TX, 1);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Control TX.\r\n");
+    }
+
+    ret =  USARTdrv->Control(ARM_USART_CONTROL_RX, 1);
+    ret = USARTdrv_pump_tl->Control(ARM_USART_CONTROL_RX, 1);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Control RX.\r\n");
+    }
+
+    while(1) {
+        /* Get byte from UART - clear event flag before UART call */
+        event_flags_uart_pump_tl &= ~(UART_CB_RX_EVENT | UART_CB_RX_TIMEOUT);
+        ret = USARTdrv_pump_tl->Receive(&cmd, 1);
+        if(ret != ARM_DRIVER_OK)
+        {
+            printf("\r\n Error in UART Receive.\r\n");
+        }
+
+        /* wait for event flag after UART call */
+        while(!(event_flags_uart_pump_tl & (UART_CB_RX_EVENT | UART_CB_RX_TIMEOUT)));
+
+        if (event_flags_uart_pump_tl & (UART_CB_RX_EVENT))
+        {
+            /* Write byte(s) to UART - again, set event flag before UART call */
+            event_flags_uart &= ~UART_CB_TX_EVENT;
+            /* send received character to the other UART. */
+            ret = USARTdrv->Send(&cmd, 1);
+
+            /* wait for event flag after UART call */
+            while(!(event_flags_uart & (UART_CB_TX_EVENT)));
+        }
+    }
+
+}
+
 /* Define main entry point */
 int main()
 {
@@ -339,7 +438,8 @@ int main()
     }
     #endif
     hardware_init();
-    myUART_Thread_entry();
+    // myUART_Thread_entry();
+    Pump_TL_Thread_entry();
 }
 
 /************************ (C) COPYRIGHT ALIF SEMICONDUCTOR *****END OF FILE****/

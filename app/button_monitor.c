@@ -51,6 +51,8 @@
 #define PIN4                            4   /*< LED1_G gpio pin >*/
 #define PIN6                            6   /*< LED1_B gpio pin >*/
 
+#define PIN1                            1   /*< BUTTON_PURPLE gpio pin >*/
+
 /* GPIO port used for LED0_R & LED0_B */
 extern  ARM_DRIVER_GPIO ARM_Driver_GPIO_(GPIO12_PORT);
 ARM_DRIVER_GPIO *gpioDrv12 = &ARM_Driver_GPIO_(GPIO12_PORT);
@@ -109,7 +111,7 @@ void led_blink_app (void)
     uint8_t LED1_R = PIN2;
     uint8_t LED1_G = PIN4;
     uint8_t LED1_B = PIN6;
-    uint8_t BUTTON_PURPLE = PIN0;
+    uint8_t BUTTON_PURPLE = PIN1;
     uint32_t button_value = 1;
     uint32_t button_pad_config = PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP;
     

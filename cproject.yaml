@@ -2,8 +2,9 @@ project:
   groups:
     - group: App
       files:
-        - file: app/button_monitor.c
-        # - file: app/pump_comm.c
+        # - file: app/button_monitor_dlb.c
+        # - file: app/button_monitor.c
+        - file: app/pump_comm.c
         # - file: app/main.c
         # - file: app/LED_blink_baremetal.c
         # - file: app/UART4_Baremetal.c
@@ -25,7 +26,9 @@ project:
     # needed for Alif Ensemble support
     - component: AlifSemiconductor::Device:Startup&C Startup
     - component: ARM::CMSIS:CORE@5.6.0
-    
+    # - component: ARM::CMSIS-Compiler:I/O:STDOUT&User
+    # - component: AlifSemiconductor::Device:Retarget IO:STDOUT
+
     # peripheral drivers & middleware, uncomment as needed
     # - component: AlifSemiconductor::Device:SOC Peripherals:ADC
     # - component: AlifSemiconductor::Device:SOC Peripherals:Analog Config
