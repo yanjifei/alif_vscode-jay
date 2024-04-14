@@ -29,11 +29,13 @@
 /* Project Includes */
 /* include for UART Driver */
 #include "Driver_USART.h"
+#include "Driver_GPIO.h"
 
 /* PINMUX Driver */
 #include "pinconf.h"
 
 #include "RTE_Components.h"
+#include CMSIS_device_header
 #if defined(RTE_Compiler_IO_STDOUT)
 #include "retarget_stdout.h"
 #endif  /* RTE_Compiler_IO_STDOUT */
@@ -70,6 +72,7 @@ void Pump_TL_Thread_entry();
 volatile uint32_t event_flags_uart;
 volatile uint32_t event_flags_uart_pump_tl;
 
+uint32_t volatile ms_ticks = 0;
 
 /**
  * @function    int hardware_init(void)
@@ -155,6 +158,17 @@ void myUART_callback_pump_tl(uint32_t event)
         /* Receive Success with rx timeout */
         event_flags_uart_pump_tl |= UART_CB_RX_TIMEOUT;
     }
+}
+
+void SysTick_Handler (void) {
+  ms_ticks++;
+}
+void delay(uint32_t nticks)
+{
+      uint32_t c_ticks;
+
+      c_ticks = ms_ticks;
+      while ((ms_ticks - c_ticks) < nticks) ;
 }
 
 /**
@@ -335,9 +349,12 @@ error_uninitialize:
 void Pump_TL_Thread_entry()
 {
     char cmd;
+    bool stop_streaming = false;
     int32_t ret;
     ARM_DRIVER_VERSION version;
     event_flags_uart_pump_tl = 0;
+    event_flags_uart = 0;
+    uint32_t char_cnt = 0;
 
     version = USARTdrv_pump_tl->GetVersion();
     // printf("\r\n UART version api:%X driver:%X...\r\n",version.api, version.drv);
@@ -398,6 +415,15 @@ void Pump_TL_Thread_entry()
         printf("\r\n Error in UART Control RX.\r\n");
     }
 
+    event_flags_uart_pump_tl &= ~UART_CB_TX_EVENT;
+    // stop streaming mode
+    ret = USARTdrv_pump_tl->Send("#W2,0\n", 6);
+    if(ret != ARM_DRIVER_OK)
+    {
+        printf("\r\n Error in UART Send.\r\n");
+    }
+    while(!(event_flags_uart_pump_tl & (UART_CB_TX_EVENT)));
+
     while(1) {
         /* Get byte from UART - clear event flag before UART call */
         event_flags_uart_pump_tl &= ~(UART_CB_RX_EVENT | UART_CB_RX_TIMEOUT);
@@ -416,10 +442,13 @@ void Pump_TL_Thread_entry()
             event_flags_uart &= ~UART_CB_TX_EVENT;
             /* send received character to the other UART. */
             ret = USARTdrv->Send(&cmd, 1);
-
+            if (cmd == 10) {
+              ret = USARTdrv_pump_tl->Send("#R39\n", 5);
+            }
             /* wait for event flag after UART call */
             while(!(event_flags_uart & (UART_CB_TX_EVENT)));
         }
+
     }
 
 }
@@ -438,6 +467,8 @@ int main()
     }
     #endif
     hardware_init();
+    /* Configure Systick for each millisec */
+    SysTick_Config(SystemCoreClock/1000);
     // myUART_Thread_entry();
     Pump_TL_Thread_entry();
 }
